@@ -86,6 +86,93 @@ it('calls react-native-share with the correct payload when a share button is pre
   );
 });
 
+it('does not render a copy-link action when no link is provided', async () => {
+  const ref = createRef<ShareTrayHandle>();
+  await render(
+    <ShareTray ref={ref} shareTargets={shareTargets}>
+      <Text>wrapped content</Text>
+    </ShareTray>
+  );
+
+  await act(async () => {
+    await ref.current?.captureAndShare();
+  });
+
+  expect(screen.queryByTestId('share-tray-copy-link-button')).toBeNull();
+});
+
+it('copies the link to the clipboard and shows a confirmation when the copy-link action is pressed', async () => {
+  jest.useFakeTimers();
+  const Clipboard = require('expo-clipboard');
+  const ref = createRef<ShareTrayHandle>();
+  await render(
+    <ShareTray ref={ref} shareTargets={shareTargets} link="https://example.com/p/1">
+      <Text>wrapped content</Text>
+    </ShareTray>
+  );
+
+  await act(async () => {
+    await ref.current?.captureAndShare();
+  });
+
+  const copyButton = await screen.findByTestId('share-tray-copy-link-button');
+  await fireEvent.press(copyButton);
+
+  expect(Clipboard.setStringAsync).toHaveBeenCalledWith('https://example.com/p/1');
+  expect(screen.getByText('Copied')).toBeTruthy();
+
+  await act(async () => {
+    jest.runAllTimers();
+  });
+  expect(screen.getByText('Copy link')).toBeTruthy();
+
+  jest.useRealTimers();
+});
+
+it('opens the generic share sheet with the capture and link when the more action is pressed', async () => {
+  const ref = createRef<ShareTrayHandle>();
+  await render(
+    <ShareTray ref={ref} shareTargets={shareTargets} link="https://example.com/p/1">
+      <Text>wrapped content</Text>
+    </ShareTray>
+  );
+
+  await act(async () => {
+    await ref.current?.captureAndShare();
+  });
+
+  await fireEvent.press(await screen.findByTestId('share-tray-more-button'));
+
+  expect(Share.open).toHaveBeenCalledWith(
+    expect.objectContaining({
+      url: 'file:///mock/capture.png',
+      message: 'https://example.com/p/1',
+    })
+  );
+});
+
+it('renders a fallback icon and still shares correctly for an unrecognized platform', async () => {
+  const ref = createRef<ShareTrayHandle>();
+  await render(
+    <ShareTray
+      ref={ref}
+      shareTargets={[{ id: 'custom', label: 'Custom App', social: 'some-other-app' }]}
+    >
+      <Text>wrapped content</Text>
+    </ShareTray>
+  );
+
+  await act(async () => {
+    await ref.current?.captureAndShare();
+  });
+
+  await fireEvent.press(await screen.findByTestId('share-button-custom'));
+
+  expect(Share.shareSingle).toHaveBeenCalledWith(
+    expect.objectContaining({ social: 'some-other-app' })
+  );
+});
+
 it('hides the tray and clears the captured uri when dismissed', async () => {
   const ref = createRef<ShareTrayHandle>();
   const onDismiss = jest.fn();

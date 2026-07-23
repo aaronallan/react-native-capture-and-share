@@ -20,6 +20,12 @@ export interface ShareTrayProps {
   children: ReactNode;
   /** Share destinations rendered as a horizontal carousel once a capture is ready. */
   shareTargets: ShareTarget[];
+  /**
+   * A URL associated with the captured content. When provided, a "Copy link" action is
+   * rendered in the carousel that copies this value to the clipboard, and it's included as
+   * the `message` when the "More" action opens the generic system share sheet.
+   */
+  link?: string;
   /** Called after the tray is dismissed and its captured-image state is cleared. */
   onDismiss?: () => void;
 }

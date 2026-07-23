@@ -5,21 +5,27 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import BottomSheet, { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import * as Clipboard from 'expo-clipboard';
 import { captureRef } from 'react-native-view-shot';
 import Share from 'react-native-share';
 import type { ShareSingleOptions } from 'react-native-share';
 
+import { PlatformIcon } from './PlatformIcon';
 import type { ShareTarget, ShareTrayHandle, ShareTrayProps } from './types';
 
+const COPY_CONFIRMATION_MS = 1500;
+
 export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function ShareTray(
-  { children, shareTargets, onDismiss },
+  { children, shareTargets, link, onDismiss },
   ref
 ) {
   const captureTargetRef = useRef<View>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  const [justCopied, setJustCopied] = useState(false);
 
   const captureAndShare = useCallback(async () => {
     const uri = await captureRef(captureTargetRef, { format: 'png', quality: 1 });
@@ -31,6 +37,7 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
 
   const handleClose = useCallback(() => {
     setCapturedUri(null);
+    setJustCopied(false);
     onDismiss?.();
   }, [onDismiss]);
 
@@ -52,6 +59,22 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
     },
     [capturedUri]
   );
+
+  const handleCopyLinkPress = useCallback(async () => {
+    if (!link) return;
+    await Clipboard.setStringAsync(link);
+    setJustCopied(true);
+    setTimeout(() => setJustCopied(false), COPY_CONFIRMATION_MS);
+  }, [link]);
+
+  const handleMorePress = useCallback(async () => {
+    if (!capturedUri) return;
+    await Share.open({
+      url: capturedUri,
+      message: link,
+      type: 'image/png',
+    });
+  }, [capturedUri, link]);
 
   return (
     <View style={styles.container}>
@@ -88,23 +111,50 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
             />
           ) : null}
 
-          <ScrollView
+          <BottomSheetScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carouselContent}
             style={styles.carousel}
+            contentContainerStyle={styles.carouselContent}
           >
             {shareTargets.map((target) => (
-              <Pressable
-                key={target.id}
-                testID={`share-button-${target.id}`}
-                onPress={() => handleSharePress(target)}
-                style={styles.shareButton}
-              >
-                <Text>{target.label}</Text>
-              </Pressable>
+              <View key={target.id} style={styles.actionItem}>
+                <Pressable
+                  testID={`share-button-${target.id}`}
+                  onPress={() => handleSharePress(target)}
+                >
+                  <PlatformIcon social={target.social} />
+                </Pressable>
+                <Text style={styles.actionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                  {target.label}
+                </Text>
+              </View>
             ))}
-          </ScrollView>
+
+            {link ? (
+              <View style={styles.actionItem}>
+                <Pressable testID="share-tray-copy-link-button" onPress={handleCopyLinkPress}>
+                  <View style={styles.neutralCircle}>
+                    <FontAwesome6 name="copy" iconStyle="regular" size={20} color="#1c1c1e" />
+                  </View>
+                </Pressable>
+                <Text style={styles.actionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                  {justCopied ? 'Copied' : 'Copy link'}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.actionItem}>
+              <Pressable testID="share-tray-more-button" onPress={handleMorePress}>
+                <View style={styles.neutralCircle}>
+                  <FontAwesome6 name="plus" iconStyle="solid" size={20} color="#1c1c1e" />
+                </View>
+              </Pressable>
+              <Text style={styles.actionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                More
+              </Text>
+            </View>
+          </BottomSheetScrollView>
         </BottomSheetView>
       </BottomSheet>
     </View>
@@ -149,16 +199,32 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   carousel: {
+    // width: '100%' is required - without an explicit width, BottomSheetScrollView
+    // under-measures its own viewport here and silently stops scrolling partway through
+    // its content, with no error and no way to reach the rest.
+    width: '100%',
     flexGrow: 0,
   },
   carouselContent: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
   },
-  shareButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+  actionItem: {
+    alignItems: 'center',
+    width: 58,
+  },
+  neutralCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#f0f0f0',
+  },
+  actionLabel: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#1c1c1e',
+    textAlign: 'center',
   },
 });

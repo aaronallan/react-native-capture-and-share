@@ -19,7 +19,11 @@ export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <ShareTray ref={shareTrayRef} shareTargets={shareTargets}>
+        <ShareTray
+          ref={shareTrayRef}
+          shareTargets={shareTargets}
+          link="https://example.com/share/demo"
+        >
           <View style={styles.container}>
             <Text>Open up App.tsx to start working on your app!</Text>
             <Button title="Capture & share" onPress={() => shareTrayRef.current?.captureAndShare()} />

@@ -21,6 +21,11 @@ const BottomSheetView = function BottomSheetView(props) {
   return React.createElement(View, props, props.children);
 };
 
+const BottomSheetScrollView = function BottomSheetScrollView(props) {
+  return React.createElement(View, props, props.children);
+};
+
 module.exports = BottomSheet;
 module.exports.default = BottomSheet;
 module.exports.BottomSheetView = BottomSheetView;
+module.exports.BottomSheetScrollView = BottomSheetScrollView;
