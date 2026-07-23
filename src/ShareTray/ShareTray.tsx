@@ -180,6 +180,12 @@ const styles = StyleSheet.create({
   },
   captureTarget: {
     flex: 1,
+    // Fallback background for the capture itself: react-native-view-shot captures whatever
+    // is actually opaque, so if the wrapped content doesn't set its own background, the
+    // capture comes out with transparent PNG areas - which then show through as whatever
+    // color sits behind the preview Image (see `preview.backgroundColor` below) instead of
+    // looking like a normal screenshot. A consumer's own background still paints over this.
+    backgroundColor: '#fff',
   },
   sheetContent: {
     paddingTop: 4,
