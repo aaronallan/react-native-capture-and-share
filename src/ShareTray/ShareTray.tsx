@@ -95,10 +95,11 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
         // ScrollView) once movement is clearly horizontal.
         activeOffsetY={[-10, 10]}
         failOffsetX={[-10, 10]}
+        containerStyle={styles.sheetContainer}
         backgroundStyle={styles.sheetBackground}
       >
         <BottomSheetView style={styles.sheetContent}>
-          <View style={styles.header}>
+          <View style={[styles.header, styles.paddedContent]}>
             <Text style={styles.title}>Share</Text>
             <Pressable
               testID="share-tray-close-button"
@@ -172,14 +173,20 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    // Defensive: a reusable component shouldn't depend on the consumer's outer layout not
+    // setting alignItems: 'center' on an ancestor (which would otherwise shrink this - and
+    // the sheet inside it - to content width instead of the full device width).
+    alignSelf: 'stretch',
   },
   captureTarget: {
     flex: 1,
   },
   sheetContent: {
-    paddingHorizontal: 20,
     paddingTop: 4,
     paddingBottom: 28,
+  },
+  paddedContent: {
+    paddingHorizontal: 20,
   },
   header: {
     flexDirection: 'row',
@@ -195,12 +202,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 4,
   },
+  sheetContainer: {
+    marginHorizontal: 12,
+  },
   sheetBackground: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
   preview: {
-    width: '100%',
+    marginHorizontal: 20,
     height: 220,
     borderRadius: 14,
     backgroundColor: '#eee',
@@ -209,13 +219,16 @@ const styles = StyleSheet.create({
   carousel: {
     // width: '100%' is required - without an explicit width, BottomSheetScrollView
     // under-measures its own viewport here and silently stops scrolling partway through
-    // its content, with no error and no way to reach the rest.
+    // its content, with no error and no way to reach the rest. Left unpadded (unlike
+    // header/preview) so the scrollable viewport reaches the sheet's true edges; the
+    // resting inset instead comes from carouselContent's contentContainerStyle padding.
     width: '100%',
     flexGrow: 0,
   },
   carouselContent: {
     flexDirection: 'row',
     gap: 14,
+    paddingHorizontal: 20,
   },
   actionItem: {
     alignItems: 'center',

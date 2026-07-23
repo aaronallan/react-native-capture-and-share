@@ -17,14 +17,14 @@ export default function App() {
   const shareTrayRef = useRef<ShareTrayHandle>(null);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <ShareTray
           ref={shareTrayRef}
           shareTargets={shareTargets}
           link="https://example.com/share/demo"
         >
-          <View style={styles.container}>
+          <View style={styles.content}>
             <Text>Open up App.tsx to start working on your app!</Text>
             <Button title="Capture & share" onPress={() => shareTrayRef.current?.captureAndShare()} />
             <StatusBar style="auto" />
@@ -36,9 +36,15 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  // Deliberately no alignItems/justifyContent here - centering the demo content is the inner
+  // `content` style's job. Centering the root shrinks ShareTray (and the sheet inside it) to
+  // content width instead of the full device width, since neither stretches by default.
+  root: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
