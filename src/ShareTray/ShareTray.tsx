@@ -88,6 +88,13 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
         enableDynamicSizing
         enablePanDownToClose
         onClose={handleClose}
+        // Without these, the sheet's own vertical pan gesture competes with the horizontal
+        // carousel below and steals slightly-diagonal swipes, making the scroll feel janky.
+        // activeOffsetY requires >10px of vertical movement before the sheet starts responding
+        // to the drag at all; failOffsetX yields to a horizontal gesture (the carousel's
+        // ScrollView) once movement is clearly horizontal.
+        activeOffsetY={[-10, 10]}
+        failOffsetX={[-10, 10]}
       >
         <BottomSheetView style={styles.sheetContent}>
           <View style={styles.header}>
@@ -98,7 +105,7 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
               hitSlop={8}
               style={styles.closeButton}
             >
-              <Text style={styles.closeButtonLabel}>Close</Text>
+              <FontAwesome6 name="xmark" iconStyle="solid" size={18} color="#1c1c1e" />
             </Pressable>
           </View>
 
@@ -187,14 +194,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 4,
   },
-  closeButtonLabel: {
-    fontSize: 15,
-    color: '#666',
-  },
   preview: {
-    width: '100%',
+    // Bleeds edge-to-edge by canceling sheetContent's paddingHorizontal, rather than using
+    // width: '100%' (which would only span the already-padded content area, not the full sheet).
+    marginHorizontal: -20,
     height: 220,
-    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
     backgroundColor: '#eee',
     marginBottom: 20,
   },
