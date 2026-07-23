@@ -95,6 +95,7 @@ export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function Sh
         // ScrollView) once movement is clearly horizontal.
         activeOffsetY={[-10, 10]}
         failOffsetX={[-10, 10]}
+        backgroundStyle={styles.sheetBackground}
       >
         <BottomSheetView style={styles.sheetContent}>
           <View style={styles.header}>
@@ -194,13 +195,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 4,
   },
-  preview: {
-    // Bleeds edge-to-edge by canceling sheetContent's paddingHorizontal, rather than using
-    // width: '100%' (which would only span the already-padded content area, not the full sheet).
-    marginHorizontal: -20,
-    height: 220,
+  sheetBackground: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
+  },
+  preview: {
+    width: '100%',
+    height: 220,
+    borderRadius: 14,
     backgroundColor: '#eee',
     marginBottom: 20,
   },
