@@ -1,2 +1,10 @@
 export { ShareTray } from './ShareTray';
-export type { ShareTarget, ShareTrayHandle, ShareTrayProps } from './types';
+export { useShareTray } from './useShareTray';
+export type {
+  ShareTarget,
+  ShareTrayEvent,
+  ShareTrayHandle,
+  ShareTrayProps,
+  UseShareTrayOptions,
+  UseShareTrayResult,
+} from './types';
