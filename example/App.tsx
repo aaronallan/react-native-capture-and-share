@@ -4,8 +4,8 @@ import { Button, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ShareTray, useShareTray } from './src/ShareTray';
-import type { ShareTrayHandle, ShareTarget } from './src/ShareTray';
+import { ShareTray, useShareTray } from 'react-native-capture-and-share';
+import type { ShareTrayHandle, ShareTarget } from 'react-native-capture-and-share';
 
 const shareTargets: ShareTarget[] = [
   { id: 'whatsapp', label: 'WhatsApp', social: 'whatsapp' },
