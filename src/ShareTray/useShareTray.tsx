@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentType } from 'react';
 import type { StyleProp, View, ViewStyle } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -7,6 +7,7 @@ import { captureRef } from 'react-native-view-shot';
 import Share from 'react-native-share';
 import type { ShareSingleOptions } from 'react-native-share';
 
+import { filterInstalledShareTargets } from './shareTargetAvailability';
 import { ShareTrayBody } from './ShareTrayBody';
 import type { ShareTarget, UseShareTrayOptions, UseShareTrayResult } from './types';
 
@@ -31,22 +32,54 @@ export function useShareTray({
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [justCopied, setJustCopied] = useState(false);
+  const [installedShareTargets, setInstalledShareTargets] = useState<ShareTarget[]>(shareTargets);
+  // Set right before the content-affecting state below changes, cleared once expand() has
+  // actually been called for it - see handleContentLayout for why.
+  const pendingExpandRef = useRef(false);
 
   const bind = useCallback((node: View | null) => {
     targetRef.current = node;
   }, []);
 
+  // Checked once here - on mount and whenever the configured shareTargets change - rather than
+  // on every captureAndShare call: install state rarely changes mid-session, and keeping it off
+  // the capture path means the only thing the sheet's content gains at capture time is the
+  // preview image, not also a resized carousel. That matters for expand() below - one thing
+  // changing settles more predictably than two at once.
+  useEffect(() => {
+    let cancelled = false;
+    filterInstalledShareTargets(shareTargets).then((installedTargets) => {
+      if (!cancelled) setInstalledShareTargets(installedTargets);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [shareTargets]);
+
   const captureAndShare = useCallback(async () => {
     if (!targetRef.current) return;
     try {
       const uri = await captureRef(targetRef, { format: 'png', quality: 1 });
+      pendingExpandRef.current = true;
       setCapturedUri(uri);
-      bottomSheetRef.current?.expand();
       onEvent?.({ type: 'capture-success', uri });
     } catch (error) {
       onEvent?.({ type: 'capture-error', error });
     }
   }, [onEvent]);
+
+  // enableDynamicSizing measures the sheet's snap height from the content's native onLayout,
+  // and expand() reads that measurement synchronously as a one-shot animation target. Calling
+  // it right after setCapturedUri (before React has even committed the new <Image>, let alone
+  // had the native side lay it out) animates to the *previous*, shorter content height. Waiting
+  // for the sheet's own content onLayout instead - the exact same signal enableDynamicSizing
+  // itself uses - means expand() runs once the new height is already what it'll read.
+  const handleContentLayout = useCallback(() => {
+    if (pendingExpandRef.current) {
+      pendingExpandRef.current = false;
+      bottomSheetRef.current?.expand();
+    }
+  }, []);
 
   const handleSheetClose = useCallback(() => {
     setCapturedUri(null);
@@ -115,7 +148,7 @@ export function useShareTray({
   liveRef.current = {
     capturedUri,
     justCopied,
-    shareTargets,
+    shareTargets: installedShareTargets,
     link,
     dismissOnBackdropPress,
     backdropStyle,
@@ -125,6 +158,7 @@ export function useShareTray({
     onSharePress: handleSharePress,
     onCopyLinkPress: handleCopyLinkPress,
     onMorePress: handleMorePress,
+    onContentLayout: handleContentLayout,
   };
 
   const [TrayComponent] = useState<ComponentType>(() => {
@@ -145,6 +179,7 @@ export function useShareTray({
           onSharePress={live.onSharePress}
           onCopyLinkPress={live.onCopyLinkPress}
           onMorePress={live.onMorePress}
+          onContentLayout={live.onContentLayout}
         />
       );
     };
@@ -166,4 +201,5 @@ interface ShareTrayBodyLiveProps {
   onSharePress: (target: ShareTarget) => void;
   onCopyLinkPress: () => void;
   onMorePress: () => void;
+  onContentLayout: () => void;
 }

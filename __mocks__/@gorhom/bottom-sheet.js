@@ -13,15 +13,17 @@ const BottomSheet = React.forwardRef(function BottomSheet(props, ref) {
     snapToIndex: (index) => setOpen(index >= 0),
   }));
 
-  if (!open) return null;
-
+  // Real gorhom BottomSheet keeps its content mounted at all times (translated off-screen
+  // when closed) rather than unmounting it - production code relies on that (e.g.
+  // useShareTray's expand-after-layout wiring needs onLayout to fire before expand() is ever
+  // called, which requires this content to already be mounted while closed).
   const Backdrop = props.backdropComponent;
   return React.createElement(
     View,
     { testID: 'mock-bottom-sheet' },
     Backdrop
       ? React.createElement(Backdrop, {
-          animatedIndex: { value: 0 },
+          animatedIndex: { value: open ? 0 : -1 },
           animatedPosition: { value: 0 },
         })
       : null,
@@ -30,6 +32,12 @@ const BottomSheet = React.forwardRef(function BottomSheet(props, ref) {
 });
 
 const BottomSheetView = function BottomSheetView(props) {
+  // Real native views always fire onLayout once mounted/updated; react-test-renderer never
+  // does, so this simulates it - production code (e.g. useShareTray's expand-after-layout
+  // wiring) relies on onLayout actually firing.
+  React.useEffect(() => {
+    props.onLayout?.({ nativeEvent: { layout: { height: 400 } } });
+  });
   return React.createElement(View, props, props.children);
 };
 

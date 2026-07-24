@@ -25,7 +25,24 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "react-native-share",
+        {
+          "ios": [
+            "whatsapp",
+            "twitter",
+            "instagram"
+          ],
+          "android": [
+            "com.whatsapp",
+            "com.twitter.android",
+            "com.instagram.android"
+          ],
+          "enableBase64ShareAndroid": true
+        }
+      ],
+      "expo-build-properties"
     ]
   }
 }
