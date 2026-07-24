@@ -103,7 +103,8 @@ export const SOCIAL_APPS: Record<string, SocialAppMeta> = {
   [Share.Social.SMS]: {
     // Routes to Apple Messages on iOS and the device's default SMS app on Android (both
     // resolved natively by react-native-share) - there's no separate app to detect here.
-    icon: 'comment-sms',
+    // A plain bubble, not 'comment-sms' (which bakes the literal text "SMS" into the glyph).
+    icon: 'comment',
     iconStyle: 'solid',
     backgroundColor: '#34C759',
   },
