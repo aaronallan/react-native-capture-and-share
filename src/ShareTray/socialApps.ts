@@ -24,10 +24,11 @@ export interface SocialAppMeta {
 }
 
 /**
- * Metadata for every `Share.Social` value ShareTray supports as a `ShareTarget`- i.e. all of
- * them except the Stories variants, which require an extra required `appId` and so don't fit
- * the single shared shape ShareTray hands to `shareSingle` (see `ShareTarget['social']` in
- * types.ts). Drives both `PlatformIcon` and `shareTargetAvailability`'s installed-app check.
+ * Metadata for every `Share.Social` value ShareTray supports as a `ShareTarget`, except: the
+ * Stories variants, which require an extra required `appId` and so don't fit the single shared
+ * shape ShareTray hands to `shareSingle` (see `ShareTarget['social']` in types.ts); and
+ * Googleplus, a defunct product with no app left to curate. Drives both `PlatformIcon` and
+ * `shareTargetAvailability`'s installed-app check.
  */
 export const SOCIAL_APPS: Record<string, SocialAppMeta> = {
   [Share.Social.FACEBOOK]: {
@@ -38,8 +39,13 @@ export const SOCIAL_APPS: Record<string, SocialAppMeta> = {
     androidPackage: 'com.facebook.katana',
   },
   [Share.Social.PAGESMANAGER]: {
-    icon: 'facebook',
-    iconStyle: 'brand',
+    // react-native-share (and this social's name) still call it "Pages Manager", but Meta
+    // renamed the app itself to "Meta Business Suite" - same app, same package/App Store
+    // listing (com.facebook.pages.app), just rebranded. FontAwesome has no icon for either
+    // name, so this uses a generic briefcase rather than reusing Facebook's own logo, which
+    // would misrepresent it as the same app.
+    icon: 'briefcase',
+    iconStyle: 'solid',
     backgroundColor: '#0A5DC2',
     iosScheme: 'fb-pages-manager',
     androidPackage: 'com.facebook.pages.app',
@@ -74,13 +80,9 @@ export const SOCIAL_APPS: Record<string, SocialAppMeta> = {
     iosScheme: 'instagram',
     androidPackage: 'com.instagram.android',
   },
-  [Share.Social.GOOGLEPLUS]: {
-    icon: 'google-plus',
-    iconStyle: 'brand',
-    backgroundColor: '#DB4437',
-    iosScheme: 'gplus',
-    androidPackage: 'com.google.android.apps.plus',
-  },
+  // Deliberately no entry for Share.Social.GOOGLEPLUS - Google+ shut down in 2019, so there's
+  // no app left to detect or curate an icon for. It falls back to PlatformIcon's generic glyph
+  // if a consumer configures it anyway.
   [Share.Social.EMAIL]: {
     icon: 'envelope',
     iconStyle: 'solid',
