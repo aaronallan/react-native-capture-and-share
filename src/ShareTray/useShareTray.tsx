@@ -61,15 +61,23 @@ export function useShareTray({
   const handleSharePress = useCallback(
     async (target: ShareTarget) => {
       if (!capturedUri) return;
-      // Cast: ShareSingleOptions is a discriminated union keyed on `social` with
-      // platform-specific extra fields (e.g. Facebook Stories needs `appId`). ShareTray only
-      // supports the common { social, url, type } shape; see ShareTarget['social'] in types.ts.
-      await Share.shareSingle({
-        social: target.social,
-        url: capturedUri,
-        type: 'image/png',
-      } as ShareSingleOptions);
-      onEvent?.({ type: 'share', target });
+      try {
+        // Cast: ShareSingleOptions is a discriminated union keyed on `social` with
+        // platform-specific extra fields (e.g. Facebook Stories needs `appId`). ShareTray
+        // only supports the common { social, url, type } shape; see ShareTarget['social']
+        // in types.ts.
+        await Share.shareSingle({
+          social: target.social,
+          url: capturedUri,
+          type: 'image/png',
+        } as ShareSingleOptions);
+        onEvent?.({ type: 'share', target });
+      } catch (error) {
+        // react-native-share rejects (rather than resolving with success: false) when the
+        // user cancels the native share sheet - a normal, expected outcome, not a real
+        // error, so this doesn't rethrow or otherwise disrupt the tray.
+        onEvent?.({ type: 'share-error', target, error });
+      }
     },
     [capturedUri, onEvent]
   );
@@ -84,12 +92,17 @@ export function useShareTray({
 
   const handleMorePress = useCallback(async () => {
     if (!capturedUri) return;
-    await Share.open({
-      url: capturedUri,
-      message: link,
-      type: 'image/png',
-    });
-    onEvent?.({ type: 'more' });
+    try {
+      await Share.open({
+        url: capturedUri,
+        message: link,
+        type: 'image/png',
+      });
+      onEvent?.({ type: 'more' });
+    } catch (error) {
+      // Same as handleSharePress: rejects on user cancellation, which isn't a real error.
+      onEvent?.({ type: 'more-error', error });
+    }
   }, [capturedUri, link, onEvent]);
 
   // TrayComponent must keep the same identity across renders - if this were recreated each

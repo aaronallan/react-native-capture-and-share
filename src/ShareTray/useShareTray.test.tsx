@@ -174,6 +174,39 @@ it('copies the link, emits copy-link, and shows a confirmation', async () => {
   jest.useRealTimers();
 });
 
+it('emits share-error instead of throwing when Share.shareSingle rejects (e.g. user cancels)', async () => {
+  (Share.shareSingle as jest.Mock).mockRejectedValueOnce(new Error('User did not share'));
+  const onEvent = jest.fn();
+  await render(<VisibleHarness onEvent={onEvent} />);
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+  await fireEvent.press(await screen.findByTestId('share-button-whatsapp'));
+
+  expect(onEvent).toHaveBeenCalledWith({
+    type: 'share-error',
+    target: shareTargets[0],
+    error: expect.any(Error),
+  });
+  // The tray stays open and usable - cancelling a share isn't a fatal error.
+  expect(screen.getByTestId('share-tray-preview-image')).toBeTruthy();
+});
+
+it('emits more-error instead of throwing when Share.open rejects (e.g. user cancels)', async () => {
+  (Share.open as jest.Mock).mockRejectedValueOnce(new Error('User did not share'));
+  const onEvent = jest.fn();
+  await render(<VisibleHarness onEvent={onEvent} />);
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+  await fireEvent.press(await screen.findByTestId('share-tray-more-button'));
+
+  expect(onEvent).toHaveBeenCalledWith({ type: 'more-error', error: expect.any(Error) });
+  expect(screen.getByTestId('share-tray-preview-image')).toBeTruthy();
+});
+
 it('opens the generic share sheet and emits a more event', async () => {
   const onEvent = jest.fn();
   await render(<VisibleHarness onEvent={onEvent} />);
