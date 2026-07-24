@@ -33,9 +33,6 @@ export function useShareTray({
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [justCopied, setJustCopied] = useState(false);
   const [installedShareTargets, setInstalledShareTargets] = useState<ShareTarget[]>(shareTargets);
-  // Set right before the content-affecting state below changes, cleared once expand() has
-  // actually been called for it - see handleContentLayout for why.
-  const pendingExpandRef = useRef(false);
 
   const bind = useCallback((node: View | null) => {
     targetRef.current = node;
@@ -43,9 +40,8 @@ export function useShareTray({
 
   // Checked once here - on mount and whenever the configured shareTargets change - rather than
   // on every captureAndShare call: install state rarely changes mid-session, and keeping it off
-  // the capture path means the only thing the sheet's content gains at capture time is the
-  // preview image, not also a resized carousel. That matters for expand() below - one thing
-  // changing settles more predictably than two at once.
+  // the capture path avoids an extra native round-trip (Linking.canOpenURL /
+  // Share.isPackageInstalled per target) between the user tapping share and the tray opening.
   useEffect(() => {
     let cancelled = false;
     filterInstalledShareTargets(shareTargets).then((installedTargets) => {
@@ -60,26 +56,13 @@ export function useShareTray({
     if (!targetRef.current) return;
     try {
       const uri = await captureRef(targetRef, { format: 'png', quality: 1 });
-      pendingExpandRef.current = true;
       setCapturedUri(uri);
+      bottomSheetRef.current?.expand();
       onEvent?.({ type: 'capture-success', uri });
     } catch (error) {
       onEvent?.({ type: 'capture-error', error });
     }
   }, [onEvent]);
-
-  // enableDynamicSizing measures the sheet's snap height from the content's native onLayout,
-  // and expand() reads that measurement synchronously as a one-shot animation target. Calling
-  // it right after setCapturedUri (before React has even committed the new <Image>, let alone
-  // had the native side lay it out) animates to the *previous*, shorter content height. Waiting
-  // for the sheet's own content onLayout instead - the exact same signal enableDynamicSizing
-  // itself uses - means expand() runs once the new height is already what it'll read.
-  const handleContentLayout = useCallback(() => {
-    if (pendingExpandRef.current) {
-      pendingExpandRef.current = false;
-      bottomSheetRef.current?.expand();
-    }
-  }, []);
 
   const handleSheetClose = useCallback(() => {
     setCapturedUri(null);
@@ -158,7 +141,6 @@ export function useShareTray({
     onSharePress: handleSharePress,
     onCopyLinkPress: handleCopyLinkPress,
     onMorePress: handleMorePress,
-    onContentLayout: handleContentLayout,
   };
 
   const [TrayComponent] = useState<ComponentType>(() => {
@@ -179,7 +161,6 @@ export function useShareTray({
           onSharePress={live.onSharePress}
           onCopyLinkPress={live.onCopyLinkPress}
           onMorePress={live.onMorePress}
-          onContentLayout={live.onContentLayout}
         />
       );
     };
@@ -201,5 +182,4 @@ interface ShareTrayBodyLiveProps {
   onSharePress: (target: ShareTarget) => void;
   onCopyLinkPress: () => void;
   onMorePress: () => void;
-  onContentLayout: () => void;
 }

@@ -26,8 +26,6 @@ export interface ShareTrayBodyProps {
   onSharePress: (target: ShareTarget) => void;
   onCopyLinkPress: () => void;
   onMorePress: () => void;
-  /** Fired on every native layout pass of the sheet's content (image, carousel, etc). */
-  onContentLayout: () => void;
 }
 
 /** Pure presentational tray UI. Rendered by `useShareTray`'s `TrayComponent`; not exported. */
@@ -45,7 +43,6 @@ export function ShareTrayBody({
   onSharePress,
   onCopyLinkPress,
   onMorePress,
-  onContentLayout,
 }: ShareTrayBodyProps) {
   return (
     <BottomSheet
@@ -76,7 +73,7 @@ export function ShareTrayBody({
         />
       )}
     >
-      <BottomSheetView style={styles.sheetContent} onLayout={onContentLayout}>
+      <BottomSheetView style={styles.sheetContent}>
         <View style={[styles.header, styles.paddedContent]}>
           <Text style={styles.title}>Share</Text>
           <Pressable
