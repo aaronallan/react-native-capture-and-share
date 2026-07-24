@@ -21,8 +21,10 @@ export type ShareTrayEvent =
   | { type: 'capture-success'; uri: string }
   | { type: 'capture-error'; error: unknown }
   | { type: 'share'; target: ShareTarget }
+  | { type: 'share-error'; target: ShareTarget; error: unknown }
   | { type: 'copy-link' }
   | { type: 'more' }
+  | { type: 'more-error'; error: unknown }
   | { type: 'dismiss' };
 
 export interface UseShareTrayOptions {
