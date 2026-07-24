@@ -15,12 +15,17 @@ const FORBIDDEN_PATTERNS = [
 
 // --ignore-scripts: this only checks the file list from whatever's already built in lib/ -
 // it doesn't rebuild. Run `npm run build` first if you want to verify a fresh build's
-// contents. Without this flag, `prepare`'s bob build output mixes into the same stdout
-// stream as npm's --json output and breaks the JSON parse below.
+// contents. npm's own handling of --ignore-scripts for `pack` is version-dependent: some
+// versions (e.g. npm 10.x, bundled with Node 22) still run `prepare` and print its output
+// to stdout ahead of the JSON, so we can't assume the whole stream is clean JSON - instead
+// find the array's own line, since npm always emits it as pretty-printed JSON starting
+// with a lone "[" on its own line.
 const output = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
   encoding: 'utf8',
 });
-const [{ files }] = JSON.parse(output);
+const jsonStart = output.lastIndexOf('\n[\n');
+const json = jsonStart === -1 ? output : output.slice(jsonStart + 1);
+const [{ files }] = JSON.parse(json);
 const paths = files.map((file) => file.path);
 
 const violations = paths.flatMap((path) =>
