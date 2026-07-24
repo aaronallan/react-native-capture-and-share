@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentType } from 'react';
 import type { StyleProp, View, ViewStyle } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -7,6 +7,7 @@ import { captureRef } from 'react-native-view-shot';
 import Share from 'react-native-share';
 import type { ShareSingleOptions } from 'react-native-share';
 
+import { filterInstalledShareTargets } from './shareTargetAvailability';
 import { ShareTrayBody } from './ShareTrayBody';
 import type { ShareTarget, UseShareTrayOptions, UseShareTrayResult } from './types';
 
@@ -31,10 +32,25 @@ export function useShareTray({
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [justCopied, setJustCopied] = useState(false);
+  const [installedShareTargets, setInstalledShareTargets] = useState<ShareTarget[]>(shareTargets);
 
   const bind = useCallback((node: View | null) => {
     targetRef.current = node;
   }, []);
+
+  // Checked once here - on mount and whenever the configured shareTargets change - rather than
+  // on every captureAndShare call: install state rarely changes mid-session, and keeping it off
+  // the capture path avoids an extra native round-trip (Linking.canOpenURL /
+  // Share.isPackageInstalled per target) between the user tapping share and the tray opening.
+  useEffect(() => {
+    let cancelled = false;
+    filterInstalledShareTargets(shareTargets).then((installedTargets) => {
+      if (!cancelled) setInstalledShareTargets(installedTargets);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [shareTargets]);
 
   const captureAndShare = useCallback(async () => {
     if (!targetRef.current) return;
@@ -115,7 +131,7 @@ export function useShareTray({
   liveRef.current = {
     capturedUri,
     justCopied,
-    shareTargets,
+    shareTargets: installedShareTargets,
     link,
     dismissOnBackdropPress,
     backdropStyle,

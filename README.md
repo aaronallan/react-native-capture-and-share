@@ -20,6 +20,32 @@ npx expo install @expo/vector-icons @gorhom/bottom-sheet expo-asset expo-clipboa
 
 `@gorhom/bottom-sheet` requires `GestureHandlerRootView` to wrap your app - see its [installation guide](https://gorhom.dev/react-native-bottom-sheet/) if you don't already have one set up.
 
+### Detecting installed apps
+
+ShareTray only renders the `shareTargets` that are actually installed on the device - checked once on mount and again whenever the `shareTargets` array itself changes, not on every `captureAndShare()` call. Detection works differently per platform:
+
+- **iOS**: `Linking.canOpenURL()` against each app's URL scheme. This only works for schemes your app has declared in `Info.plist`'s `LSApplicationQueriesSchemes` - anything else fails open (the target stays visible even if the app isn't installed).
+- **Android**: `Share.isPackageInstalled()` against each app's package name.
+- **SMS and Email** are OS-level (no separate app to detect - SMS opens Apple Messages on iOS and the device's default SMS app on Android) and are always shown.
+
+react-native-share ships an Expo config plugin that registers exactly this for you - list the same social apps you pass as `shareTargets`:
+
+```json
+{
+  "plugins": [
+    [
+      "react-native-share",
+      {
+        "ios": ["whatsapp", "twitter", "instagram"],
+        "android": ["com.whatsapp", "com.twitter.android", "com.instagram.android"]
+      }
+    ]
+  ]
+}
+```
+
+Then rebuild the native project (`npx expo prebuild`). Bare (non-Expo) projects add the equivalent entries to `Info.plist`/`AndroidManifest.xml` directly - see [react-native-share's README](https://github.com/react-native-share/react-native-share).
+
 ## Usage
 
 ### Wrapping visible content

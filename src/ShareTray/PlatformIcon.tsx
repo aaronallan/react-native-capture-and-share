@@ -5,6 +5,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Share from 'react-native-share';
 
+import { SOCIAL_APPS } from './socialApps';
+
 const ICON_SIZE = 22;
 
 const INSTAGRAM_GRADIENT = [
@@ -15,46 +17,47 @@ const INSTAGRAM_GRADIENT = [
   '#bc1888',
 ] as const;
 
-const PLATFORM_BACKGROUND: Record<string, string> = {
-  [Share.Social.WHATSAPP]: '#25D366',
-  [Share.Social.TWITTER]: '#000000',
-  [Share.Social.FACEBOOK]: '#1877F2',
-  [Share.Social.TELEGRAM]: '#26A5E4',
-};
-
 const DEFAULT_BACKGROUND = '#8E8E93';
-
-function PlatformGlyph({ social, color }: { social: string; color: string }) {
-  switch (social) {
-    case Share.Social.WHATSAPP:
-      return <FontAwesome6 name="whatsapp" iconStyle="brand" size={ICON_SIZE} color={color} />;
-    case Share.Social.TWITTER:
-      return <FontAwesome6 name="x-twitter" iconStyle="brand" size={ICON_SIZE} color={color} />;
-    case Share.Social.INSTAGRAM:
-      return <FontAwesome6 name="instagram" iconStyle="brand" size={ICON_SIZE} color={color} />;
-    case Share.Social.FACEBOOK:
-      return <FontAwesome6 name="facebook" iconStyle="brand" size={ICON_SIZE} color={color} />;
-    case Share.Social.TELEGRAM:
-      return <FontAwesome6 name="telegram" iconStyle="brand" size={ICON_SIZE} color={color} />;
-    default:
-      return <Ionicons name="share-social-outline" size={ICON_SIZE} color={color} />;
-  }
-}
 
 /** Circular, brand-colored icon for a direct-share platform. Falls back to a generic share glyph for unknown platforms. */
 export function PlatformIcon({ social }: { social: string }) {
   if (social === Share.Social.INSTAGRAM) {
     return (
-      <LinearGradient colors={INSTAGRAM_GRADIENT} style={styles.circle}>
-        <PlatformGlyph social={social} color="#fff" />
+      <LinearGradient testID="platform-icon" colors={INSTAGRAM_GRADIENT} style={styles.circle}>
+        <FontAwesome6
+          testID="platform-icon-glyph"
+          name="instagram"
+          iconStyle="brand"
+          size={ICON_SIZE}
+          color="#fff"
+        />
       </LinearGradient>
     );
   }
 
-  const backgroundColor = PLATFORM_BACKGROUND[social] ?? DEFAULT_BACKGROUND;
+  const meta = SOCIAL_APPS[social];
+  if (!meta) {
+    return (
+      <View testID="platform-icon" style={[styles.circle, { backgroundColor: DEFAULT_BACKGROUND }]}>
+        <Ionicons
+          testID="platform-icon-glyph"
+          name="share-social-outline"
+          size={ICON_SIZE}
+          color="#fff"
+        />
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.circle, { backgroundColor }]}>
-      <PlatformGlyph social={social} color="#fff" />
+    <View testID="platform-icon" style={[styles.circle, { backgroundColor: meta.backgroundColor }]}>
+      <FontAwesome6
+        testID="platform-icon-glyph"
+        name={meta.icon}
+        iconStyle={meta.iconStyle}
+        size={ICON_SIZE}
+        color={meta.glyphColor ?? '#fff'}
+      />
     </View>
   );
 }

@@ -11,6 +11,10 @@ const shareTargets: ShareTarget[] = [
   { id: 'whatsapp', label: 'WhatsApp', social: 'whatsapp' },
   { id: 'twitter', label: 'Twitter', social: 'twitter' },
   { id: 'instagram', label: 'Instagram', social: 'instagram' },
+  // OS-level target: no app to detect, routes to Apple Messages on iOS and the device's
+  // default SMS app on Android, so it's always shown alongside whichever of the above are
+  // actually installed.
+  { id: 'sms', label: 'Messages', social: 'sms' },
 ];
 
 /**

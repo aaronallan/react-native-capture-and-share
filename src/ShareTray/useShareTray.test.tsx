@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { captureRef } from 'react-native-view-shot';
 import Share from 'react-native-share';
@@ -149,6 +149,84 @@ it('emits a share event with the target when a share button is pressed', async (
     expect.objectContaining({ social: Share.Social.WHATSAPP, url: 'file:///mock/capture.png' })
   );
   expect(onEvent).toHaveBeenCalledWith({ type: 'share', target: shareTargets[0] });
+});
+
+it('only renders share buttons for targets installed on the device', async () => {
+  jest
+    .spyOn(Linking, 'canOpenURL')
+    .mockImplementation((url) => Promise.resolve(url !== 'twitter://'));
+
+  await render(<VisibleHarness />);
+  // Availability is checked once on mount rather than per capture - let that settle first.
+  await act(async () => {});
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+
+  expect(await screen.findByTestId('share-button-whatsapp')).toBeTruthy();
+  expect(screen.queryByTestId('share-button-twitter')).toBeNull();
+});
+
+it('checks installed targets once on mount rather than on every capture', async () => {
+  const canOpenURL = jest
+    .spyOn(Linking, 'canOpenURL')
+    .mockImplementation((url) => Promise.resolve(url !== 'twitter://'));
+
+  await render(<VisibleHarness />);
+  await act(async () => {});
+  expect(canOpenURL).toHaveBeenCalledTimes(shareTargets.length);
+
+  // If install state changes after mount, that's not picked up by a later capture - only by
+  // shareTargets itself changing (e.g. a consumer re-fetching its own target list).
+  canOpenURL.mockClear().mockImplementation(() => Promise.resolve(true));
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+
+  expect(await screen.findByTestId('share-button-whatsapp')).toBeTruthy();
+  expect(screen.queryByTestId('share-button-twitter')).toBeNull();
+  expect(canOpenURL).not.toHaveBeenCalled();
+});
+
+it('re-checks installed targets when shareTargets itself changes', async () => {
+  const canOpenURL = jest
+    .spyOn(Linking, 'canOpenURL')
+    .mockImplementation((url) => Promise.resolve(url !== 'twitter://'));
+
+  function ChangingTargetsHarness() {
+    const [targets, setTargets] = React.useState(shareTargets);
+    const { captureAndShare, bind, TrayComponent } = useShareTray({ shareTargets: targets });
+    return (
+      <>
+        <View ref={bind}>
+          <Text>visible content</Text>
+        </View>
+        <TrayComponent />
+        <Text testID="trigger" onPress={() => captureAndShare()}>
+          trigger
+        </Text>
+        <Text testID="refresh-targets" onPress={() => setTargets([...shareTargets])}>
+          refresh targets
+        </Text>
+      </>
+    );
+  }
+
+  await render(<ChangingTargetsHarness />);
+  await act(async () => {});
+  expect(canOpenURL).toHaveBeenCalledTimes(shareTargets.length);
+
+  canOpenURL.mockClear().mockImplementation(() => Promise.resolve(true));
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('refresh-targets'));
+  });
+  expect(canOpenURL).toHaveBeenCalled();
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+  expect(await screen.findByTestId('share-button-twitter')).toBeTruthy();
 });
 
 it('copies the link, emits copy-link, and shows a confirmation', async () => {
