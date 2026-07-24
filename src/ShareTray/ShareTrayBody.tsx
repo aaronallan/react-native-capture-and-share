@@ -1,7 +1,12 @@
 import React from 'react';
 import type { RefObject } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import BottomSheet, { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
+import type { StyleProp, ViewStyle } from 'react-native';
+import BottomSheet, {
+  BottomSheetBackdrop,
+  BottomSheetScrollView,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 import { PlatformIcon } from './PlatformIcon';
@@ -13,6 +18,9 @@ export interface ShareTrayBodyProps {
   justCopied: boolean;
   shareTargets: ShareTarget[];
   link?: string;
+  dismissOnBackdropPress: boolean;
+  backdropStyle?: StyleProp<ViewStyle>;
+  backdropOpacity?: number;
   onSheetClose: () => void;
   onCloseButtonPress: () => void;
   onSharePress: (target: ShareTarget) => void;
@@ -27,6 +35,9 @@ export function ShareTrayBody({
   justCopied,
   shareTargets,
   link,
+  dismissOnBackdropPress,
+  backdropStyle,
+  backdropOpacity,
   onSheetClose,
   onCloseButtonPress,
   onSharePress,
@@ -47,8 +58,20 @@ export function ShareTrayBody({
       // ScrollView) once movement is clearly horizontal.
       activeOffsetY={[-10, 10]}
       failOffsetX={[-10, 10]}
-      containerStyle={styles.sheetContainer}
       backgroundStyle={styles.sheetBackground}
+      backdropComponent={(props) => (
+        <BottomSheetBackdrop
+          {...props}
+          // Matches this sheet's own index scheme (closed: -1, open: 0 - there's only ever
+          // one snap point, from enableDynamicSizing) rather than the library's defaults
+          // (1/0), which assume a sheet with a collapsed AND expanded snap point.
+          appearsOnIndex={0}
+          disappearsOnIndex={-1}
+          pressBehavior={dismissOnBackdropPress ? 'close' : 'none'}
+          style={[props.style, backdropStyle]}
+          opacity={backdropOpacity}
+        />
+      )}
     >
       <BottomSheetView style={styles.sheetContent}>
         <View style={[styles.header, styles.paddedContent]}>
@@ -146,12 +169,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 4,
   },
-  sheetContainer: {
-    marginHorizontal: 12,
-  },
   sheetBackground: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
+    borderRadius: 30,
   },
   preview: {
     marginHorizontal: 20,

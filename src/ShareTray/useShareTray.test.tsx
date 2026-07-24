@@ -13,11 +13,24 @@ const shareTargets: ShareTarget[] = [
 ];
 
 /** Mirrors how a consumer wraps visible content: bind on the visible child itself. */
-function VisibleHarness({ onEvent }: { onEvent?: (event: ShareTrayEvent) => void }) {
+function VisibleHarness({
+  onEvent,
+  dismissOnBackdropPress,
+  backdropStyle,
+  backdropOpacity,
+}: {
+  onEvent?: (event: ShareTrayEvent) => void;
+  dismissOnBackdropPress?: boolean;
+  backdropStyle?: object;
+  backdropOpacity?: number;
+}) {
   const { captureAndShare, bind, TrayComponent } = useShareTray({
     shareTargets,
     link: 'https://example.com/p/1',
     onEvent,
+    dismissOnBackdropPress,
+    backdropStyle,
+    backdropOpacity,
   });
   return (
     <>
@@ -189,6 +202,53 @@ it('emits dismiss and clears the preview when the tray is closed', async () => {
 
   expect(screen.queryByTestId('share-tray-preview-image')).toBeNull();
   expect(onEvent).toHaveBeenCalledWith({ type: 'dismiss' });
+});
+
+it('configures the backdrop to dismiss on press by default', async () => {
+  await render(<VisibleHarness />);
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+
+  expect(screen.getByTestId('bottom-sheet-backdrop').props.pressBehavior).toBe('close');
+});
+
+it('does not configure the backdrop to dismiss on press when dismissOnBackdropPress is false', async () => {
+  await render(<VisibleHarness dismissOnBackdropPress={false} />);
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+
+  expect(screen.getByTestId('bottom-sheet-backdrop').props.pressBehavior).toBe('none');
+});
+
+it('passes backdropStyle and backdropOpacity through to the backdrop', async () => {
+  await render(
+    <VisibleHarness backdropStyle={{ backgroundColor: 'red' }} backdropOpacity={0.8} />
+  );
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+
+  const backdrop = screen.getByTestId('bottom-sheet-backdrop');
+  expect(backdrop.props.opacity).toBe(0.8);
+  expect(backdrop.props.style).toEqual(
+    expect.arrayContaining([expect.objectContaining({ backgroundColor: 'red' })])
+  );
+});
+
+it('leaves backdropStyle/backdropOpacity undefined (library defaults) when not provided', async () => {
+  await render(<VisibleHarness />);
+
+  await act(async () => {
+    fireEvent.press(screen.getByTestId('trigger'));
+  });
+
+  const backdrop = screen.getByTestId('bottom-sheet-backdrop');
+  expect(backdrop.props.opacity).toBeUndefined();
 });
 
 it('keeps a stable TrayComponent identity across re-renders instead of remounting the sheet', async () => {

@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import type { ComponentType } from 'react';
-import type { View } from 'react-native';
+import type { StyleProp, View, ViewStyle } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import * as Clipboard from 'expo-clipboard';
 import { captureRef } from 'react-native-view-shot';
@@ -19,7 +19,14 @@ const COPY_CONFIRMATION_MS = 1500;
  * the common visible-child case; use this hook directly when the shareable content isn't (or
  * isn't only) what's rendered on screen.
  */
-export function useShareTray({ shareTargets, link, onEvent }: UseShareTrayOptions): UseShareTrayResult {
+export function useShareTray({
+  shareTargets,
+  link,
+  dismissOnBackdropPress = true,
+  backdropStyle,
+  backdropOpacity,
+  onEvent,
+}: UseShareTrayOptions): UseShareTrayResult {
   const targetRef = useRef<View | null>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
@@ -97,6 +104,9 @@ export function useShareTray({ shareTargets, link, onEvent }: UseShareTrayOption
     justCopied,
     shareTargets,
     link,
+    dismissOnBackdropPress,
+    backdropStyle,
+    backdropOpacity,
     onSheetClose: handleSheetClose,
     onCloseButtonPress: handleCloseButtonPress,
     onSharePress: handleSharePress,
@@ -114,6 +124,9 @@ export function useShareTray({ shareTargets, link, onEvent }: UseShareTrayOption
           justCopied={live.justCopied}
           shareTargets={live.shareTargets}
           link={live.link}
+          dismissOnBackdropPress={live.dismissOnBackdropPress}
+          backdropStyle={live.backdropStyle}
+          backdropOpacity={live.backdropOpacity}
           onSheetClose={live.onSheetClose}
           onCloseButtonPress={live.onCloseButtonPress}
           onSharePress={live.onSharePress}
@@ -132,6 +145,9 @@ interface ShareTrayBodyLiveProps {
   justCopied: boolean;
   shareTargets: ShareTarget[];
   link: string | undefined;
+  dismissOnBackdropPress: boolean;
+  backdropStyle: StyleProp<ViewStyle> | undefined;
+  backdropOpacity: number | undefined;
   onSheetClose: () => void;
   onCloseButtonPress: () => void;
   onSharePress: (target: ShareTarget) => void;

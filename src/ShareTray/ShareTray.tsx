@@ -10,10 +10,17 @@ import type { ShareTrayHandle, ShareTrayProps } from './types';
  * card rendered off-screen - use `useShareTray` directly instead of wrapping anything here.
  */
 export const ShareTray = forwardRef<ShareTrayHandle, ShareTrayProps>(function ShareTray(
-  { children, shareTargets, link, onEvent },
+  { children, shareTargets, link, dismissOnBackdropPress, backdropStyle, backdropOpacity, onEvent },
   ref
 ) {
-  const { captureAndShare, bind, TrayComponent } = useShareTray({ shareTargets, link, onEvent });
+  const { captureAndShare, bind, TrayComponent } = useShareTray({
+    shareTargets,
+    link,
+    dismissOnBackdropPress,
+    backdropStyle,
+    backdropOpacity,
+    onEvent,
+  });
 
   useImperativeHandle(ref, () => ({ captureAndShare }), [captureAndShare]);
 
