@@ -14,7 +14,19 @@ const BottomSheet = React.forwardRef(function BottomSheet(props, ref) {
   }));
 
   if (!open) return null;
-  return React.createElement(View, { testID: 'mock-bottom-sheet' }, props.children);
+
+  const Backdrop = props.backdropComponent;
+  return React.createElement(
+    View,
+    { testID: 'mock-bottom-sheet' },
+    Backdrop
+      ? React.createElement(Backdrop, {
+          animatedIndex: { value: 0 },
+          animatedPosition: { value: 0 },
+        })
+      : null,
+    props.children
+  );
 });
 
 const BottomSheetView = function BottomSheetView(props) {
@@ -25,7 +37,12 @@ const BottomSheetScrollView = function BottomSheetScrollView(props) {
   return React.createElement(View, props, props.children);
 };
 
+const BottomSheetBackdrop = function BottomSheetBackdrop(props) {
+  return React.createElement(View, { testID: 'bottom-sheet-backdrop', ...props });
+};
+
 module.exports = BottomSheet;
 module.exports.default = BottomSheet;
 module.exports.BottomSheetView = BottomSheetView;
 module.exports.BottomSheetScrollView = BottomSheetScrollView;
+module.exports.BottomSheetBackdrop = BottomSheetBackdrop;

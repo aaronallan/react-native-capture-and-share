@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode, RefCallback } from 'react';
-import type { View } from 'react-native';
+import type { StyleProp, View, ViewStyle } from 'react-native';
 
 /** A single direct-share destination rendered as a button in the tray's carousel. */
 export interface ShareTarget {
@@ -34,6 +34,18 @@ export interface UseShareTrayOptions {
    * the `message` when the "More" action opens the generic system share sheet.
    */
   link?: string;
+  /**
+   * Whether tapping the dimmed area behind the tray dismisses it.
+   * @default true
+   */
+  dismissOnBackdropPress?: boolean;
+  /** Style applied to the dimmed backdrop behind the tray (e.g. to change its color). */
+  backdropStyle?: StyleProp<ViewStyle>;
+  /**
+   * Opacity of the dimmed backdrop when the tray is fully open, from 0 (invisible) to 1.
+   * @default 0.5
+   */
+  backdropOpacity?: number;
   /** Called for each tray lifecycle event - capture result, action presses, dismiss. */
   onEvent?: (event: ShareTrayEvent) => void;
 }
@@ -67,6 +79,18 @@ export interface ShareTrayProps {
    * the `message` when the "More" action opens the generic system share sheet.
    */
   link?: string;
+  /**
+   * Whether tapping the dimmed area behind the tray dismisses it.
+   * @default true
+   */
+  dismissOnBackdropPress?: boolean;
+  /** Style applied to the dimmed backdrop behind the tray (e.g. to change its color). */
+  backdropStyle?: StyleProp<ViewStyle>;
+  /**
+   * Opacity of the dimmed backdrop when the tray is fully open, from 0 (invisible) to 1.
+   * @default 0.5
+   */
+  backdropOpacity?: number;
   /** Called for each tray lifecycle event - capture result, action presses, dismiss. */
   onEvent?: (event: ShareTrayEvent) => void;
 }
